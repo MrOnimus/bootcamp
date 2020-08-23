@@ -1,5 +1,6 @@
 import math
 from random import randint
+import matplotlib.pyplot as plt
 
 
 CHEATED_BY_MONEY = 1
@@ -149,6 +150,33 @@ class Slyster(Merchant):
         return self.opponent_move
 
 
+class Testing(Merchant):
+
+    """ Docstring for my own test merchant. """
+
+    i = 0
+    has_been_tricked = False
+    irascibility = 5
+
+    def cheated_by(self):
+        self.money += CHEATED_BY_MONEY
+        self.i = 0
+        self.irascibility = 10 - self.i
+        self.has_been_tricked = True
+
+    def both_cheated(self):
+        self.money += BOTH_CHEATED_MONEY
+        self.i = 0
+        self.irascibility = 10 - self.i
+
+    def logic(self):
+        if self.has_been_tricked and self.i < self.irascibility:
+            return 'trick'
+        else:
+            self.i += 1
+            return 'trade'
+
+
 def merchant_error(solution):
     if randint(1, 100) <= 5:
         if solution == 'trade':
@@ -211,12 +239,59 @@ def print_state(epoch, merchants):
         index=epoch + 1
     ))
     for i in range(len(merchants)):
-        print("{index} merchant is {name}, and has {money}".format(
+        print("{index} merchant is {name}, and has {money}$.".format(
             index=i + 1,
             name=type(merchants[i]).__name__,
             money=merchants[i].money
         ))
     print()
+
+
+def analytics(merchants):
+    money_data = {}
+    demographics = {}
+    total = 0
+
+    for merchant in merchants:
+        if type(merchant).__name__ in money_data:
+            money_data[type(merchant).__name__] += merchant.money
+        else:
+            money_data[type(merchant).__name__] = merchant.money
+
+        if type(merchant).__name__ in demographics:
+            demographics[type(merchant).__name__] += 1
+        else:
+            demographics[type(merchant).__name__] = 1
+
+        total += merchant.money
+
+    print("---------------- ANALYTICS ----------------")
+    print("Total money:")
+    for key in money_data:
+        print("{name}s collected {part}% of all money in the game.".format(
+            name=key,
+            part=round(money_data[key] / total * 100, 2)
+        ))
+    print()
+    print("Amount of people:")
+    for key in demographics:
+        print("{name} takes {part}% of all population in the game.".format(
+            name=key,
+            part=demographics[key]
+        ))
+    print()
+    print("Average amount of money per class:")
+    for key in money_data:
+        print("{name} in average have {money}$.".format(
+            name=key,
+            money=round(money_data[key] / demographics[key])
+        ))
+    print()
+
+    plt.pie(money_data.values(), labels=money_data.keys(),
+            autopct='%1.1f%%', shadow=True, startangle=140)
+    plt.axis('equal')
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -226,8 +301,10 @@ if __name__ == "__main__":
     randoms = [Random(money=0) for i in range(10)]
     vindictives = [Vindictive(money=0) for i in range(10)]
     slysters = [Slyster(money=0) for i in range(10)]
+    tests = [Testing(money=0) for i in range(10)]
 
-    merchants = altruists + tricksters + gaudies + randoms + vindictives + slysters
+    merchants = altruists + tricksters + gaudies + \
+        randoms + vindictives + slysters + tests
 
     print('How many epoch do you want to happen?', end=' ')
     try:
@@ -244,3 +321,5 @@ if __name__ == "__main__":
         merchants = kick_N_merchants(N, merchants)
 
         add_N_new_merchants(N, merchants)
+
+    analytics(merchants)
